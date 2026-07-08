@@ -1,258 +1,209 @@
-# Drell--Yan angular coefficients with generic photon--Z' interference
 
-This repository/notebook contains a numerical study of the Drell--Yan angular coefficients
+# Drell--Yan Angular Coefficients with Photon--Z' Interference
 
-$$
-A_0,\qquad A_1,\qquad A_2,
-$$
+This repository contains a numerical study of the Drell--Yan angular coefficients
+`A0`, `A1`, and `A2` using collinear QCD factorization. The calculation compares
+theoretical predictions with ATLAS data from HEPData and includes a generic
+photon--Z' interference contribution.
 
-for proton--proton collisions at
-
-$$
-\sqrt{s}=8~\mathrm{TeV},
-$$
-
-using ATLAS angular-coefficient data from HEPData and a theoretical prediction based on collinear perturbative QCD.
-
-The main goal of the calculation is to compare the photon-exchange Drell--Yan prediction with a modified prediction including a generic interference term between the photon and a hypothetical neutral gauge boson $Z'$:
-
-$$
-|\mathcal M|^2
-\simeq
-|\mathcal M_\gamma|^2
-+
-2\,\mathrm{Re}\left(\mathcal M_\gamma \mathcal M_{Z'}^\ast\right),
-$$
-
-while neglecting the quadratic term
-
-$$
-|\mathcal M_{Z'}|^2.
-$$
-
-This follows the task requested by the supervisor: extract angular-coefficient data, compare with theory, and include a photon--$Z'$ interference contribution analogous to the standard photon--$Z^0$ interference structure.
+The goal is not to introduce a new QCD channel. The QCD kernels and PDF
+convolution are kept unchanged. The new physics enters only through the
+electroweak factor multiplying the partonic kernels.
 
 ---
 
-## 1. Data source
+## 1. Physics goal
 
-The experimental data used in the plots were obtained from HEPData for the ATLAS measurement:
+The Drell--Yan process considered here is
 
-**ATLAS Collaboration**, *Measurement of the angular coefficients in Z-boson events using electron and muon pairs from data taken at $\sqrt{s}=8$ TeV with the ATLAS detector*, JHEP 08 (2016) 159.
-
-- Journal DOI: `10.1007/JHEP08(2016)159`
-- HEPData DOI: `10.17182/hepdata.76986`
-- arXiv: `1606.00689`
-
-The relevant HEPData tables contain the measured Drell--Yan angular coefficients $A_i$ as functions of the dilepton transverse momentum $Q_T$ in bins of the dilepton rapidity $|y_Z|$.
-
-In this calculation, the main datasets used are:
-
-| Coefficient | Rapidity bin | Regularisation |
-|---|---:|---|
-| $A_0$ | $2<|y_Z|<3.5$ | regularised |
-| $A_1$ | $1<|y_Z|<2$ | regularised |
-| $A_2$ | $2<|y_Z|<3.5$ | regularised |
-
-The notebook reads the HEPData CSV files from the folder defined by
-
-```python
-DATA_DIR = Path("/path/to/HEPData/tables")
+```math
+p p \to \gamma^*/Z^0/Z' + X \to \ell^+\ell^- + X .
 ```
 
-The CSV reader extracts the following information from each file:
+The angular distribution of the final-state leptons can be written in terms of
+angular coefficients `A_i`. In this project we focus on
 
-- coefficient label, e.g. `A0`, `A1`, `A2`;
-- rapidity bin, e.g. `2<|yZ|<3.5`;
-- regularisation type, e.g. `regularised` or `unregularised`;
-- central value of $Q_T$;
-- $Q_T$ bin edges;
-- measured $A_i$ value;
-- statistical, systematic, and regularisation-bias uncertainties when available.
+```math
+A_0, \qquad A_1, \qquad A_2 .
+```
 
----
+These coefficients are obtained from the helicity structure functions
+`W_T`, `W_L`, `W_Delta`, and `W_DeltaDelta` as
 
-## 2. Theoretical framework
+```math
+A_0 = \frac{2 W_L}{2 W_T + W_L},
+```
 
-The calculation follows the collinear-factorisation expression for Drell--Yan hadronic structure functions:
+```math
+A_1 = \frac{2 W_{\Delta}}{2 W_T + W_L},
+```
 
-$$
-W_i(x_1,x_2,\rho^2)
-=
-\frac{1}{x_1x_2}
-\sum_{a,b}
-\int dz_1 dz_2\,
-\widetilde w_i^{ab}(z_1,z_2,\rho^2)
-\delta\!\left(
-(1-z_1)(1-z_2)-\frac{\rho^2 z_1z_2}{1+\rho^2}
-\right)
- f_{a/H_1}\!\left(\frac{x_1}{z_1},\mu\right)
- f_{b/H_2}\!\left(\frac{x_2}{z_2},\mu\right).
-$$
+```math
+A_2 = \frac{4 W_{\Delta\Delta}}{2 W_T + W_L}.
+```
 
-The kinematic variables are
-
-$$
-\rho = \frac{Q_T}{Q},
-$$
-
-$$
-x_1=e^y\frac{\sqrt{Q^2+Q_T^2}}{\sqrt{s}},
-\qquad
-x_2=e^{-y}\frac{\sqrt{Q^2+Q_T^2}}{\sqrt{s}},
-$$
-
-and the factorisation/renormalisation scale is taken as
-
-$$
-\mu=\sqrt{Q^2+Q_T^2}.
-$$
-
-The notebook evaluates the full numerical convolution after using the phase-space delta function to reduce the two-dimensional integral to a one-dimensional integral.
-
-No small-$Q_T$ expansion is used in this notebook.
+The numerical calculation evaluates the full convolution formula, without using
+the small-QT expansion.
 
 ---
 
-## 3. Partonic channels included
+## 2. Factorized structure
 
-The calculation includes the leading $\mathcal O(\alpha_s)$ transverse-momentum-dependent Drell--Yan channels:
+The hadronic structure functions are computed schematically as
 
-$$
+```math
+W_i = \mathrm{PDFs} \otimes \widehat{w}_i^{ab} \times g_{\mathrm{EW}}.
+```
+
+Here:
+
+- `PDFs` are the parton distribution functions evaluated with LHAPDF.
+- `w_hat_i^{ab}` are the perturbative QCD kernels for the partonic channels.
+- `g_EW` is the electroweak factor.
+
+The included partonic channels are
+
+```math
 q\bar q \to \gamma^*/Z' + g,
-$$
+```
 
-$$
+```math
 qg \to \gamma^*/Z' + q,
-$$
+```
 
-$$
+```math
 gq \to \gamma^*/Z' + q.
-$$
+```
 
-The QCD kernels are kept unchanged when the $Z'$ interference is added. The new physics enters only through the electroweak coupling factor.
-
----
-
-## 4. Angular coefficients
-
-The code computes the helicity structure functions
-
-$$
-W_T,\qquad W_L,\qquad W_\Delta,\qquad W_{\Delta\Delta},
-$$
-
-and constructs
-
-$$
-A_0 = \frac{2W_L}{2W_T+W_L},
-$$
-
-$$
-A_1 = \frac{2W_\Delta}{2W_T+W_L},
-$$
-
-$$
-A_2 = \frac{4W_{\Delta\Delta}}{2W_T+W_L}.
-$$
-
-These are the coefficients compared with the ATLAS/HEPData measurements.
+The QCD part of the calculation is the same for the photon-only and
+photon--Z' cases. The only modification is the electroweak weight.
 
 ---
 
-## 5. Photon--Z' interference implementation
+## 3. Photon--Z' interference
 
-The original photon-only calculation has an electroweak factor schematically written as
+The total amplitude is approximated as
 
-$$
-g_{\mathrm{EW}}^\gamma = 1.
-$$
+```math
+\mathcal{M}_{\mathrm{tot}} = \mathcal{M}_{\gamma} + \mathcal{M}_{Z'}.
+```
 
-The generic $Z'$ interference is included by replacing this factor with
+Following the requested approximation, the squared amplitude is kept only up to
+interference level:
 
-$$
-g_{\mathrm{EW}}^{\gamma+\gamma Z'}(q,Q)
+```math
+|\mathcal{M}_{\mathrm{tot}}|^2
+\simeq
+|\mathcal{M}_{\gamma}|^2
++
+2\,\mathrm{Re}\left(\mathcal{M}_{\gamma}\mathcal{M}_{Z'}^*\right).
+```
+
+The pure diagonal Z' contribution is neglected:
+
+```math
+|\mathcal{M}_{Z'}|^2 \quad \text{is not included.}
+```
+
+In the code, this is implemented as a modified electroweak factor:
+
+```math
+g_{\mathrm{EW}}^{\gamma+\gamma Z'}
 =
-1+
-2g'_{q}g'_{\ell}\,\mathrm{Re}\,D_{Z'}(Q^2),
-$$
+1
++
+2 g'_q g'_\ell\,\mathrm{Re}\,D_{Z'}(Q^2).
+```
 
-where $g'_q$ is the vector coupling of the $Z'$ to a quark flavour, $g'_\ell$ is the vector coupling to charged leptons, and
+The real part of the Breit--Wigner propagator is
 
-$$
+```math
 \mathrm{Re}\,D_{Z'}(Q^2)
 =
 \frac{(M_{Z'}^2-Q^2)Q^2}
-{(M_{Z'}^2-Q^2)^2+M_{Z'}^2\Gamma_{Z'}^2}.
-$$
-
-The benchmark parameters are defined in the notebook as
-
-```python
-ZPRIME_BENCHMARKS = {
-    "custom": {
-        "M": 500.0,
-        "Gamma": 20.0,
-        "gV_l": 0.20,
-        "gV_u": 0.30,
-        "gV_d": -0.10,
-    }
-}
+{(M_{Z'}^2-Q^2)^2 + M_{Z'}^2\Gamma_{Z'}^2}.
 ```
 
-Important: these benchmark values are not taken from the ATLAS data or from the paper. They are user-defined test points. They can be replaced by a specific $Z'$ model or scanned over.
+The free Z' parameters are
+
+```math
+M_{Z'}, \qquad \Gamma_{Z'}, \qquad g'_u, \qquad g'_d, \qquad g'_\ell .
+```
+
+Since no specific Z' model was assumed, these parameters are treated as
+benchmarks that can be modified in the notebook.
 
 ---
 
-## 6. Universal vs non-universal benchmarks
+## 4. Universal and non-universal benchmarks
 
-A benchmark is called **universal** when the $Z'$ couples equally to up-type and down-type quarks, for example
+A universal benchmark means that the Z' couples in the same way to up-type and
+down-type quarks, for example
 
-$$
-g'_u=g'_d.
-$$
+```math
+g'_u = g'_d .
+```
 
-In that case, the $Z'$ interference often behaves approximately as a common rescaling of all helicity structure functions:
+In that case, the Z' interference often behaves approximately as a common
+rescaling of all helicity structure functions:
 
-$$
-W_i\to C W_i.
-$$
+```math
+W_i \to C W_i .
+```
 
-Since the angular coefficients are ratios, this common factor cancels almost exactly:
+Since the angular coefficients are ratios, this common factor cancels almost
+exactly. For example,
 
-$$
+```math
 A_0
 \to
-\frac{2CW_L}{2CW_T+CW_L}
+\frac{2 C W_L}{2 C W_T + C W_L}
 =
-A_0.
-$$
+\frac{2 W_L}{2 W_T + W_L}
+=
+A_0 .
+```
 
-A **non-universal** benchmark has
+A non-universal benchmark has
 
-$$
-g'_u\neq g'_d,
-$$
+```math
+g'_u \neq g'_d .
+```
 
-which changes the relative weight of different quark flavours. Since the proton PDFs for $u$ and $d$ quarks are different, this can generate a small angular deformation.
+This changes the relative weight of different quark flavours. Since the proton
+PDFs for `u` and `d` quarks are different, a non-universal benchmark can generate
+a small angular deformation.
 
 ---
 
-## 7. Output plots
+## 5. Data source
 
-For each selected $Z'$ benchmark, the notebook produces two kinds of plots.
+The experimental data are taken from HEPData:
 
-### 7.1 Direct comparison plots
+- Dataset: ATLAS Drell--Yan angular coefficients `A0`--`A7`.
+- Collision energy: 8 TeV.
+- Final state: lepton-pair production near the Z-boson invariant-mass window.
+- HEPData DOI: `10.17182/hepdata.76986`.
+- Publication: ATLAS Collaboration, *Measurement of the angular coefficients in
+  Z-boson events using electron and muon pairs from data taken at sqrt(s) = 8 TeV
+  with the ATLAS detector*, JHEP 08 (2016) 159.
 
-These show
+The notebook reads the regularised ATLAS data points for selected rapidity bins
+and compares them with the theoretical curves.
 
-$$
-A_i^{\mathrm{data}},
-\qquad
-A_i^\gamma,
-\qquad
-A_i^{\gamma+\gamma Z'}.
-$$
+---
+
+## 6. Output plots
+
+For each selected Z' benchmark, the notebook produces two kinds of plots.
+
+### 6.1 Direct comparison plots
+
+These plots show
+
+```math
+A_i^{\mathrm{data}}, \qquad A_i^{\gamma}, \qquad A_i^{\gamma+\gamma Z'} .
+```
 
 The corresponding files are named as
 
@@ -260,15 +211,15 @@ The corresponding files are named as
 A012_comparison_<benchmark_name>.png
 ```
 
-### 7.2 Isolated deformation plots
+### 6.2 Isolated deformation plots
 
-These show the shift induced by the $Z'$ interference:
+These plots show the shift induced by the Z' interference:
 
-$$
+```math
 \Delta A_i
 =
-A_i^{\gamma+\gamma Z'}-A_i^\gamma.
-$$
+A_i^{\gamma+\gamma Z'} - A_i^{\gamma}.
+```
 
 The corresponding files are named as
 
@@ -276,11 +227,13 @@ The corresponding files are named as
 A012_delta_<benchmark_name>.png
 ```
 
-These plots are often more informative than the direct comparison, because the direct photon-only and photon--$Z'$ curves can be visually indistinguishable when $|\Delta A_i|$ is very small.
+The deformation plots are often more informative than the direct comparison
+plots, because the photon-only and photon--Z' curves can be visually
+indistinguishable when the absolute shift is very small.
 
 ---
 
-## 8. Numerical diagnostics
+## 7. Numerical diagnostics
 
 The notebook writes two diagnostic CSV files:
 
@@ -291,81 +244,53 @@ individual_Zprime_chi2_diagnostics.csv
 
 The shift table reports, for each benchmark and coefficient,
 
-$$
-\max |\Delta A_i|,
-\qquad
-\langle |\Delta A_i|\rangle.
-$$
+```math
+\max |\Delta A_i|, \qquad \langle |\Delta A_i| \rangle .
+```
 
 The chi-square table reports a simple diagnostic comparison with data:
 
-$$
+```math
 \chi^2
 =
 \sum_k
-\frac{\left(A_i^{\mathrm{th}}(Q_{T,k})-A_i^{\mathrm{exp}}(Q_{T,k})\right)^2}
-{\sigma_{i,k}^2}.
-$$
-
-This is only a first numerical diagnostic. It is not yet a full statistical exclusion or fit.
-
----
-
-## 9. Main interpretation
-
-The main physical result of the benchmark study is that the $Z'$ interference modifies the angular coefficients mostly through a flavour-dependent electroweak reweighting.
-
-For universal couplings, the effect nearly cancels in the normalised angular coefficients. For non-universal couplings, a small nonzero deformation appears, especially in $A_0$ and $A_2$.
-
-The relevant observable for visualising the new contribution is therefore
-
-$$
-\Delta A_i
-=
-A_i^{\gamma+\gamma Z'}-A_i^\gamma,
-$$
-
-rather than only the direct comparison between the two curves.
-
----
-
-## 10. Software requirements
-
-The notebook requires:
-
-- Python 3;
-- `numpy`;
-- `pandas`;
-- `matplotlib`;
-- `scipy`;
-- `LHAPDF` with the chosen PDF set installed.
-
-The PDF set is defined in the configuration cell, for example
-
-```python
-PDF_SET = "cteq61"
+\frac{
+\left(A_i^{\mathrm{th}}(Q_{T,k})-A_i^{\mathrm{exp}}(Q_{T,k})\right)^2
+}{
+\sigma_{i,k}^2
+}.
 ```
 
-or another installed LHAPDF set.
+This chi-square is intended as a first diagnostic only, not as a final exclusion
+limit.
 
 ---
 
-## 11. References
+## 8. References
 
-1. ATLAS Collaboration, *Measurement of the angular coefficients in Z-boson events using electron and muon pairs from data taken at $\sqrt{s}=8$ TeV with the ATLAS detector*, JHEP 08 (2016) 159. DOI: `10.1007/JHEP08(2016)159`. HEPData DOI: `10.17182/hepdata.76986`. arXiv: `1606.00689`.
+1. G. Aad et al. (ATLAS Collaboration),
+   *Measurement of the angular coefficients in Z-boson events using electron and
+   muon pairs from data taken at sqrt(s) = 8 TeV with the ATLAS detector*,
+   JHEP 08 (2016) 159.
 
-2. V. E. Lyubovitskij, A. S. Zhevlakov, and I. A. Anikin, *Transverse momentum dependence of the T-even hadronic structure functions in the Drell-Yan process*, Phys. Rev. D 110, 074028 (2024). DOI: `10.1103/PhysRevD.110.074028`.
+2. HEPData record for the ATLAS angular-coefficient measurement,
+   DOI: `10.17182/hepdata.76986`.
 
-3. V. E. Lyubovitskij, W. Vogelsang, F. Wunder, and A. S. Zhevlakov, *Perturbative T-odd asymmetries in the Drell-Yan process revisited*, Phys. Rev. D 109, 114023 (2024). DOI: `10.1103/PhysRevD.109.114023`.
+3. V. E. Lyubovitskij, A. S. Zhevlakov, and I. A. Anikin,
+   *Transverse momentum dependence of the T-even hadronic structure functions
+   in the Drell--Yan process*, Phys. Rev. D 110, 074028 (2024).
 
-4. A. Buckley et al., *LHAPDF6: parton density access in the LHC precision era*, Eur. Phys. J. C 75, 132 (2015). DOI: `10.1140/epjc/s10052-015-3318-8`.
+4. V. E. Lyubovitskij, W. Vogelsang, F. Wunder, and A. S. Zhevlakov,
+   *Perturbative T-odd asymmetries in the Drell--Yan process revisited*,
+   Phys. Rev. D 109, 114023 (2024).
 
 ---
 
-## 12. Notes
+## 9. Notes
 
-- The $Z'$ benchmarks are illustrative unless a specific model is supplied.
-- The calculation includes only the interference term with the photon and neglects $|\mathcal M_{Z'}|^2$.
-- The current implementation focuses on $A_0$, $A_1$, and $A_2$.
-- Extending to $A_3$ and $A_4$ would require adding the corresponding helicity structure functions.
-- Extending to $A_5$, $A_6$, and $A_7$ would require the T-odd structure functions, which arise from absorptive loop contributions.
+- The calculation currently focuses on `A0`, `A1`, and `A2`.
+- The Z' implementation keeps only the photon--Z' interference term.
+- The term `|M_Z'|^2` is not included.
+- The benchmark values are illustrative unless a specific Z' model is supplied.
+- Very small differences between the photon-only and photon--Z' direct curves are
+  expected, especially for universal or heavy Z' benchmarks.
